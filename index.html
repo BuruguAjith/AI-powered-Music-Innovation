@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonix - Text to Music Generator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Custom styles for the page */
+        body {
+            background: linear-gradient(to right, #6a11cb, #ff6ec7); /* Gradient from purple to pink */
+            color: white;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+            padding: 30px;
+            background-color: rgba(0, 0, 0, 0.7); /* Dark overlay for contrast */
+            border-radius: 10px;
+        }
+        .card-body {
+            background-color: rgba(0, 0, 0, 0.3); /* Card background */
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #ff6ec7; /* Pink color */
+            border-color: #ff6ec7;
+        }
+        .btn-outline-primary {
+            border-color: #ff6ec7;
+            color: #ff6ec7;
+        }
+        .btn-outline-primary:hover {
+            background-color: #ff6ec7;
+            color: white;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        #audioPlayer h4 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-5">Welcome to Persist Ventures' MUSIC AI</h1>
+        <p class="text-center">Transform your sound descriptions into unique melodies.</p>
+        
+        <div class="card mx-auto mb-5">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Describe the Music</h4>
+                <textarea class="form-control" id="description" rows="3" placeholder="E.g., Uplifting orchestral melody."></textarea>
+                <div class="mt-4">
+                    <label for="durationSlider">Duration (up to 7 min):</label>
+                    <input type="range" class="form-range" id="durationSlider" min="1" max="7" value="10">
+                </div>
+                <button id="generateButton" class="btn btn-primary mt-4 w-100">Generate Music</button>
+            </div>
+        </div>
+
+        <div id="loader" class="text-center" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Generating your music...</p>
+        </div>
+
+        <div id="audioPlayer" class="text-center mt-5" style="display: none;">
+            <h4>AI Generated Music</h4>
+            <audio id="audio" controls>
+                <source id="audioSource" src="" type="audio/mp3">
+                Your browser does not support the audio element.
+            </audio>
+            <a href="" id="downloadLink" class="btn btn-outline-primary mt-3" download>Download Music</a>
+        </div>
+    </div>
+
+    <script>
+        const generateButton = document.getElementById("generateButton");
+        const loader = document.getElementById("loader");
+        const audioPlayer = document.getElementById("audioPlayer");
+        const audio = document.getElementById("audio");
+        const audioSource = document.getElementById("audioSource");
+
+        generateButton.addEventListener("click", async () => {
+            const prompt = document.getElementById("description").value.trim();
+            const duration = document.getElementById("durationSlider").value;
+            if (!prompt) {
+                Swal.fire({ text: "Please enter a description.", icon: "error" });
+                return;
+            }
+
+            loader.style.display = "block";
+            audioPlayer.style.display = "none";
+
+            const formData = new FormData();
+            formData.append("prompt", prompt);
+            formData.append("duration", duration);
+
+            try {
+                const response = await fetch("/generate-music", { method: "POST", body: formData });
+                const result = await response.json();
+
+                if (result.url) {
+                    audioSource.src = result.url;
+                    audio.load();
+                    audioPlayer.style.display = "block";
+                    document.getElementById("downloadLink").href = result.url;
+                } else {
+                    Swal.fire({ text: "Music generation failed.", icon: "error" });
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                Swal.fire({ text: "Request failed.", icon: "error" });
+            } finally {
+                loader.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
